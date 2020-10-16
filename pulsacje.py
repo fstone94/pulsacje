@@ -10,14 +10,14 @@ def welcome_msg():
     print("This programme generates a *.gif animation showing how star's surface pulsates in time")
     print()
     print("Usage: python3 pulsacje.py <f_in=> <f_out=> <t_total=> <delta_t=> <n_theta=> <n_phi=>")
-    print("f_in     --> name of input file containing modes parameters")
+    print("f_in     --> name of input text file containing modes parameters")
     print("f_out    --> name of the output file")
     print("t_total  --> total animation time expressed in days")
     print("delta_t  --> time step in the animation expressed in days")
     print("n_theta  --> number of discrete points on the star's astrophysical longitude")
     print("n_phi    --> number of discrete points on the star's astrophysical latitude")
     print()
-    print("Content of the input file:")
+    print("Content of the input text file:")
     print("frequency	amplitude	phase	lrank	mrank")
     print()
 
@@ -69,63 +69,114 @@ def position(f_in, t_total, delta_t, n_theta, n_phi):
     num_lines = len(open(f_in).readlines())
 
     #quotient of t_total and delta_t will be the number of images in animation
+    #the number needs to be integer 
     n_img = int(t_total / delta_t)
     
     #theta angle runs from 0 to pi
     #phi angle runs from 0 to 2pi 
-    #division of those ranges by number of discrete points n_theta and n_phi - delta_theta/phi 
+    #by dividing those ranges by number of discrete points n_theta and n_phi we get delta_theta and delta_phi 
     delta_theta = np.pi / n_theta
     delta_phi = 2 * np.pi / n_phi
 
-    cos_theta = []
-    polynominal = []
-    for i in range (1, n_theta):
-        cos1 = np.cos((i - 1) * delta_theta)
-        cos_theta.append(cos1)
+    if num_lines == 1:
+        cos_theta = []
+        polynominal = []
+        for i in range (1, n_theta):
+            cos1 = np.cos((i - 1) * delta_theta)
+            cos_theta.append(cos1)
+
+            for j in range (0, num_lines):
+                y = sci.lpmv(parameters[4], parameters[3], cos_theta[i - 1])
+                polynominal.append(y)
+
+        cos_m_phi = []
+        for i in range (1, n_phi):
+            phi_i = (i - 1) * delta_phi
         
-        for j in range (0, num_lines-1):
-            y = sci.lpmv(parameters[j, 4], parameters[j, 3], cos_theta[i - 1])
-            polynominal.append(y)
- 
-    cos_m_phi = []
-    for i in range (1, n_phi):
-        phi_i = (i - 1) * delta_phi
-        
-        for j in range (0, num_lines - 1 ):
-            cos2 = np.cos(phi_i * parameters[j, 4])
-            cos_m_phi.append(cos2)
+            for j in range (0, num_lines):
+                cos2 = np.cos(phi_i * parameters[4])
+                cos_m_phi.append(cos2)
 
-    cos_ti = []
-    for i in range (0, n_img):
-        t_i = (i - 1) * delta_t
-        arg = np.cos(2 * np.pi * parameters[0, 0] * t_i)
-        cos_ti.append(arg)
+        cos_ti = []
+        for i in range (0, n_img):
+            t_i = (i - 1) * delta_t
+            arg = np.cos(2 * np.pi * parameters[0] * t_i)
+            cos_ti.append(arg)
 
-    amplitude = []
-    for i in range (0, num_lines - 1 ):
-        amplitude.append(parameters[0, 1])
-    
-    phi_i = []
-    theta_i = []
-    r = []
-    for n in range (1, n_img):
-        for i in range(1, n_theta):
-            for j in range (1, n_phi):
+        amplitude = []
+        for i in range (0, num_lines):
+            amplitude.append(parameters[1])
 
-                r_i = 1
+        phi_i = []
+        theta_i = []
+        r = []
+        for n in range (0, n_img):
+            for i in range(0, n_theta):
+                for j in range (0, n_phi):
+                    r_i = 1
                
-                for k in range (0, num_lines - 1 ):
-                    theta = (i - 1) * delta_theta
-                    phi = (j - 1) * delta_phi
+                    for k in range (0, num_lines):
+                        theta = (i - 1) * delta_theta
+                        phi = (j - 1) * delta_phi
 
-                    r_i = 1 + parameters[k, 1] * math.sqrt(((2 * parameters[k, 3] + 1) / (4 * np.pi)) * 
-                    (math.factorial(int(parameters[k, 3]) - int(parameters[k, 4])) / 
-                    (math.factorial(int(parameters[k, 3]) + int(parameters[k, 4]))))) * polynominal[i] * cos_m_phi[j] * cos_ti[n]
+                        r_i = 1 + parameters[1] * math.sqrt(((2 * parameters[3] + 1) / (4 * np.pi)) * 
+                        (math.factorial(int(parameters[3]) - int(parameters[4])) / 
+                        (math.factorial(int(parameters[3]) + int(parameters[4]))))) * polynominal[i] * cos_m_phi[j] * cos_ti[n]
     
-                    r.append(r_i)
-                    phi_i.append(phi)
-                    theta_i.append(theta)
+                        r.append(r_i)
+                        phi_i.append(phi)
+                        theta_i.append(theta)
 
+
+    if num_lines > 1:
+        cos_theta = []
+        polynominal = []
+        for i in range (1, n_theta):
+            cos1 = np.cos((i - 1) * delta_theta)
+            cos_theta.append(cos1)
+
+            for j in range (0, num_lines):
+                y = sci.lpmv(parameters[j, 4], parameters[j, 3], cos_theta[i - 1])
+                polynominal.append(y)
+
+        cos_m_phi = []
+        for i in range (1, n_phi):
+            phi_i = (i - 1) * delta_phi
+        
+            for j in range (0, num_lines - 1 ):
+                cos2 = np.cos(phi_i * parameters[j, 4])
+                cos_m_phi.append(cos2)
+
+        cos_ti = []
+        for i in range (0, n_img):
+            t_i = (i - 1) * delta_t
+            arg = np.cos(2 * np.pi * parameters[0, 0] * t_i)
+            cos_ti.append(arg)
+
+        amplitude = []
+        for i in range (0, num_lines - 1 ):
+            amplitude.append(parameters[0, 1])
+    
+        phi_i = []
+        theta_i = []
+        r = []
+        for n in range (1, n_img):
+            for i in range(1, n_theta):
+                for j in range (1, n_phi):
+                    r_i = 1
+               
+                    for k in range (0, num_lines - 1 ):
+                        theta = (i - 1) * delta_theta
+                        phi = (j - 1) * delta_phi
+
+                        r_i = 1 + parameters[k, 1] * math.sqrt(((2 * parameters[k, 3] + 1) / (4 * np.pi)) * 
+                        (math.factorial(int(parameters[k, 3]) - int(parameters[k, 4])) / 
+                        (math.factorial(int(parameters[k, 3]) + int(parameters[k, 4]))))) * polynominal[i] * cos_m_phi[j] * cos_ti[n]
+    
+                        r.append(r_i)
+                        phi_i.append(phi)
+                        theta_i.append(theta)
+      
 
 x = position(f_in, t_total, delta_t, n_theta, n_phi)
 
