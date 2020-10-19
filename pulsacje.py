@@ -1,4 +1,4 @@
-import sys 
+import sys
 import scipy.special as sci
 import pandas as pd
 import numpy as np
@@ -67,7 +67,7 @@ def position(f_in, t_total, delta_t, n_theta, n_phi):
     parameters = np.loadtxt(f_in)
     parameters = pd.DataFrame(parameters)
     num_lines = len(open(f_in).readlines())
-
+   
     if num_lines == 1:
         parameters = parameters.T
 
@@ -83,7 +83,7 @@ def position(f_in, t_total, delta_t, n_theta, n_phi):
 
     cos_theta = []
     polynominal = []
-    for i in range (1, n_theta):
+    for i in range (1, n_theta + 2):
         cos1 = np.cos((i - 1) * delta_theta)
         cos_theta.append(cos1)
 
@@ -92,10 +92,10 @@ def position(f_in, t_total, delta_t, n_theta, n_phi):
             polynominal.append(y)
 
     cos_m_phi = []
-    for i in range (1, n_phi):
+    for i in range (1, n_phi + 2):
         phi_i = (i - 1) * delta_phi
         
-        for j in range (0, num_lines - 1 ):
+        for j in range (0, num_lines):
             cos2 = np.cos(phi_i * parameters.iloc[j, 4])
             cos_m_phi.append(cos2)
 
@@ -108,20 +108,20 @@ def position(f_in, t_total, delta_t, n_theta, n_phi):
     amplitude = []
     for i in range (0, num_lines):
         amplitude.append(parameters.iloc[0, 1])
-    
+
     phi_i = []
     theta_i = []
     r = []
-    for n in range (1, 3):
-        for i in range(1, n_theta):
-            for j in range (1, n_phi):
+    for n in range (0, 3):
+        for i in range(1, n_theta + 1):
+            for j in range (1, n_phi + 1):
                 r_i = 1
                
                 for k in range (0, num_lines):
                     theta = (i - 1) * delta_theta
                     phi = (j - 1) * delta_phi
 
-                    r_i = 1 + parameters.iloc[k, 1] * math.sqrt(((2 * parameters.iloc[k, 3] + 1) / (4 * np.pi)) * 
+                    r_i = 1 + parameters.iloc[k, 1] * math.sqrt(((2 * parameters.iloc[k, 3] + 1) / (4 * np.pi)) *
                     ((math.factorial(int(parameters.iloc[k, 3]) - int(parameters.iloc[k, 4]))) / 
                     (math.factorial(int(parameters.iloc[k, 3]) + int(parameters.iloc[k, 4]))))) * polynominal[i] * cos_m_phi[j] * cos_ti[n]
 
@@ -132,13 +132,18 @@ def position(f_in, t_total, delta_t, n_theta, n_phi):
         r = pd.DataFrame(r)
         phi_i = pd.DataFrame(phi_i)
         theta_i = pd.DataFrame(theta_i)
-             
+        
+        #coordinates are now spherical and need to be changed into cartesian
         position_vector = pd.concat([r * np.cos(phi_i) * np.sin(theta_i), r * np.sin(phi_i) * np.sin(theta_i), r * np.cos(theta_i)], axis = 1)
         position_vector.columns = ['x', 'y', 'z']
 
+        fig = px.scatter_3d(position_vector, x = 'x' , y = 'y', z = 'z', color =  r,
+                            range_color = (1 - 0.7 * sum(amplitude), 1 + 0.7 * sum(amplitude)))
+        fig.update_layout(scene_aspectmode='cube', scene = dict(
+                          xaxis = dict(range = [- 1 - sum(amplitude), 1 + sum(amplitude)],),
+                          yaxis = dict(range = [- 1 - sum(amplitude), 1 + sum(amplitude)],),
+                          zaxis = dict(range = [- 1 - sum(amplitude), 1 + sum(amplitude)])))
 
-        fig = px.scatter_3d(position_vector, x = 'x' , y = 'y', z = 'z')
-        fig.update_layout(scene_aspectmode='cube')
         fig.show()
         r = []
         phi_i = []
